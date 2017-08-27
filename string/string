@@ -1,0 +1,944 @@
+#define  _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include<assert.h>
+using namespace std;
+
+//#define GetSetParam(TYPE,DATA)\
+//	private:\
+//	TYPE _##DATA;\
+//	public:\
+//	void Set(TYPE DATA){_##DATA = DATA;}\
+//	TYPE Get(){return _##DATA;}
+//
+//class Test
+//{
+//	friend void Funtest();
+//private:
+//	GetSetParam(int,data);
+//};
+//void Funtest()
+//{
+//	Test d1;
+//	d1.Set(16);
+//	cout<<d1.Get()<<endl;
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+//void* operator new(size_t size,const char* pfilename,const char* pfuncdname,size_t lineno)
+//{
+//	cout<<pfilename<<":"<<pfuncdname<<":"<<lineno<<endl;
+//	return malloc(size);
+//}
+//
+//void operator delete(void* p,const char* pfilename,const char* pfuncdname,size_t lineno)
+//{
+//	cout<<pfilename<<":"<<pfuncdname<<":"<<lineno<<endl;
+//	if(NULL == p)
+//		return;
+//	free(p);
+//}
+//#ifdef _DEBUG
+//#define New new(__FILE__, __FUNCDNAME__, __LINE__)
+//#define Delete(p) operator delete(p,__FILE__, __FUNCDNAME__, __LINE__)
+//#endif
+//
+//#define new New
+//#define delete(p) Delete(p)
+//
+//class Test
+//{
+//public:
+//	Test()
+//	{
+//		cout<<"Test()"<<endl;
+//	}
+//	~Test()
+//	{
+//		cout<<"~Test()"<<endl;
+//	}
+//private:
+//	int data;
+//};
+//
+//int main()
+//{
+//	Test* p = new Test;
+//	p->~Test();
+//	delete(p);
+//	system("pause");
+//	return 0;
+//}
+//
+
+//class Test
+//{
+//public:
+//	Test()
+//	{
+//		cout<<"Test()"<<endl;
+//		Test *p = new Test[2];//死循环
+//		new(p+1) Test(*this);
+//	}
+//
+//	~Test()
+//	{
+//		cout<<"~Test()"<<endl;
+//		//delete this;
+//	}
+//	public:
+//	int _data;
+//};
+//
+////可不可以在构造函数中调用构造函数--定位new表达式---->死循环
+//int main()
+//{
+//	Test d1;
+//	d1._data = 20;
+//	Test *p = new Test[10];
+//	new(p+2) Test(d1);
+//	p->~Test();
+//	system("pause");
+//	return 0;
+//}
+
+//class Test
+//{
+//public:
+//	Test()
+//	{
+//		cout<<"Test()"<<endl;
+//	}
+//
+//	~Test()
+//	{
+//		cout<<"~Test()"<<endl;
+//		delete this;//一直调用析构函数，死循环
+//	}
+//};
+
+
+
+
+
+////深拷贝(简化版1)
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(0 == *pStr)
+//		{
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//	}
+//	String(const String& s)//拷贝构造
+//		:_pStr(new char[strlen(s._pStr)+1])
+//	{
+//		strcpy(_pStr,s._pStr);
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			delete[]_pStr;
+//			_pStr = NULL;
+//		}
+//	}
+//	String& operator=(const String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//           delete[]_pStr;
+//           _pStr = new char[strlen(s._pStr)+1];
+//			strcpy(_pStr,s._pStr);
+//		}
+//		return *this;
+//	}
+//private:
+//	char* _pStr;
+//};
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//    Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+////深拷贝（简洁版2）
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(0 == *pStr)
+//		{
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//	}
+//	String(String& s)//拷贝构造
+//		:_pStr(NULL)//防止交换后temp指向随机空间，本函数调用结束导致内存泄漏以致崩溃
+//	{
+//	    String temp(s._pStr);//如果不给出临时变量，交换后s的值将为NULL
+//		std::swap(_pStr,temp._pStr);
+//	}
+////1
+//	String& operator=(const String &s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//			String temp(s._pStr);//如果不给出临时变量，交换后s的值将为NULL
+//		    std::swap(_pStr,temp._pStr);
+//		}
+//		return *this;
+//	}
+//	/* 2
+//	String& operator=(const String& s)
+//	{
+//	if (this != &s)
+//	{
+//	String temp(s);
+//	std::swap(_pStr, temp._pStr);
+//	}
+//	return *this;
+//	}*/
+//
+//	/* 3
+//	String& operator=(String temp)
+//	{
+//		std::swap(_pStr, temp._pStr);
+//		return *this;
+//	}*/
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			delete[]_pStr;
+//			_pStr = NULL;
+//		}
+//	}
+//private:
+//	char* _pStr;
+//};
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+////深拷贝(普通版)
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(0 == *pStr)
+//		{
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//	}
+//	String(const String& s)//拷贝构造
+//		:_pStr(new char[strlen(s._pStr)+1])
+//	{
+//		strcpy(_pStr,s._pStr);
+//	}
+//	String& operator=(const String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)//判断是否自己给自己赋值
+//		{
+//			char* temp  = new char[strlen(s._pStr)+1];//先开辟一段新空间
+//			strcpy(temp,s._pStr);//将原对象的值赋给新空间
+//			delete []_pStr;//释放当前对象
+//			_pStr = temp;//将当前对象指向新开辟的空间
+//		}
+//		return *this;
+//	}
+//		~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			delete[]_pStr;
+//			_pStr = NULL;
+//		}
+//	}
+//private:
+//	char* _pStr;
+//};
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+////浅拷贝
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(0 == *pStr)//字符串为空
+//		{
+//			*_pStr = '\0';
+//		}
+//		else//字符串不为空
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//	}
+//	String(const String& s)//拷贝构造函数
+//	{
+//		_pStr = s._pStr;
+//	}
+//	String& operator=(String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)//判断是不是自己给自己赋值
+//		{
+//			_pStr = s._pStr;
+//		}
+//		return *this;
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			delete []_pStr;
+//			_pStr = NULL;
+//		}
+//	}
+//private:
+//	char* _pStr;
+//};
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+
+////浅拷贝(引用计数（_count作为普通成员变量）error)
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//		,_count(0)//初值赋值为0
+//	{
+//		if(0 == *pStr)
+//		{
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//		_count++;//每创建一个对象计数器加1
+//	}
+//	String(String& s)//拷贝构造
+//		:_count(s._count)//将已存在的对象s的计数器赋给当前对象
+//	{
+//		_pStr = s._pStr;
+//		s._count++;//将原对象的计数器加1
+//		_count = s._count;//将原对象的计数器加1后赋值给当前对象
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			if(--_count == 0)//如果计数器为0，说明无对象指向该空间，可以释放
+//			{
+//				delete []_pStr;
+//				_pStr = NULL;
+//			}
+//		}
+//	}
+//	String& operator=(String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//			_pStr = s._pStr;
+//			s._count++;//将原对象的计数器加1
+//			_count = s._count;//将已存在的对象s的计数器赋给当前对象
+//		}
+//		return *this;
+//	}
+//private:
+//	int _count;//给一个计数器控制析构函数
+//	char* _pStr;
+//};
+//
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+////浅拷贝(引用计数(_count作为静态成员变量))
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(0 == *pStr)
+//		{
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//		_count++;
+//	}
+//	String(const String& s)//拷贝构造
+//	{
+//		_pStr = (char*)s._pStr;
+//		s._count = _count;
+//		_count++;
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			if(--_count == 0)
+//			{
+//				delete []_pStr;
+//				_pStr = NULL;
+//			}
+//		}
+//	}
+//	String& operator=(String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//			_pStr = s._pStr;
+//			s._count = _count;
+//			_count++;
+//		}
+//		return *this;
+//	}
+//private:
+//	static int _count;
+//	char* _pStr;
+//};
+//
+//int String::_count = 0;
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了(ERROR)
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+
+
+////浅拷贝(引用计数（指针实现计数）)
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//		:count(new int(0))
+//		,_pStr(new char[strlen(pStr)+1])
+//	{
+//		if(NULL == pStr)
+//	    {
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			strcpy(_pStr,pStr);
+//		}
+//		*count = 1;
+//	}
+//	String(const String& s)//拷贝构造
+//		:count(s.count)
+//	{
+//		_pStr = (char*)s._pStr;
+//		count = s.count;
+//		(*count)++;
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			if(--(*count) == 0)
+//			{
+//				delete[]count;//勿忘了释放计数器指针
+//				delete[]_pStr;
+//				_pStr = NULL;
+//				count = NULL;
+//			}
+//		}
+//	}
+//	String& operator=(String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//			_pStr = s._pStr;
+//			count = s.count;
+//			(*count)++;
+//		}
+//		return *this;
+//	}
+//private:
+//	int* count;
+//	char* _pStr;
+//};
+//
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+
+////写时拷贝(仿照new[]实现)
+//class String
+//{
+//public:
+//	String(const char* pStr = "")//构造函数
+//	     :_pStr(new char[strlen(pStr) + 4 + 1])//每次多创建4个空间来存放当前地址有几个对象
+//	{
+//		if(NULL == pStr)
+//		{
+//			(*(int*)_pStr) = 1;//将前4个字节用来计数
+//			_pStr += 4;//指针向后偏移4个字节
+//			*_pStr = '\0';
+//		}
+//		else
+//		{
+//			(*(int*)_pStr) = 1;//将前4个字节用来计数
+//			_pStr += 4;//指针向后偏移4个字节
+//			strcpy(_pStr,pStr);//将pStr的内容拷贝到当前对象的_pStr中
+//		}
+//	}
+//	String(const String& s)//拷贝构造
+//		:_pStr(s._pStr)
+//	{
+//		++(*(int*)(_pStr-4));//向前偏移4个字节将计数加1
+//	}
+//	~String()//析构函数
+//	{
+//		if(NULL == _pStr)
+//		{
+//			return;
+//		}
+//		else
+//		{
+//			if(--(*(int*)(_pStr - 4)) == 0)//向前偏移4个字节判断计数是否为0，是0则释放
+//			{
+//				delete (_pStr-4);
+//				_pStr = NULL;
+//			}
+//		}
+//	}
+//	String& operator=(const String& s)//赋值运算符重载
+//	{
+//		if(_pStr != s._pStr)
+//		{
+//			if(--(*(int*)(_pStr - 4)) == 0)//释放旧空间
+//			{
+//				delete (_pStr-4);
+//				_pStr = NULL;
+//			}
+//		    _pStr = s._pStr;//指向新空间
+//			++(*(int*)(_pStr - 4));//计数加1
+//		}
+//		return *this;
+//	}
+//	char& operator[](size_t index)//下标访问操作符重载
+//	{
+//		assert(index>=0 && index<strlen(_pStr));
+//		if(*((int*)(_pStr-4)) > 1)//说明有多个对象指向同一块空间
+//		{
+//			char* temp = new char[strlen(_pStr) + 4 + 1];//新开辟一块空间
+//			temp += 4;//先将开辟的空间向后偏移4个字节
+//			strcpy(temp,_pStr);//将_pStr的内容拷贝到temp中
+//			--(*(int*)(_pStr-4));//将原来空间的计数器减1
+//
+//			_pStr = temp;//将当前对象指向临时空间
+//			*((int*)(_pStr-4)) = 1;//将新空间的计数器变为1
+//		}
+//		return _pStr[index];
+//	}
+//private:
+//	char* _pStr;
+//};
+//
+//void Funtest()
+//{
+//	String s1("abcd");
+//	String s2(s1);
+//	String s3 = s2;//调用拷贝构造函数(编译器会s2直接初始化s3)
+//	s3[2] = 'g';
+//	String s4;//s4对象已经存在了
+//	s4 = s3;//编译器会调用赋值运算符重载将s3的值赋给s4
+//}
+//
+//int main()
+//{
+//	Funtest();
+//	system("pause");
+//	return 0;
+//}
+
+
+
+//深拷贝(及基本操作)
+class String
+{
+public:
+	String(const char* pStr = "")//构造函数
+		:_pStr(new char[strlen(pStr)+1])
+	{
+		if(0 == *pStr)
+		{
+			*_pStr = '\0';
+		}
+		else
+		{
+			strcpy(_pStr,pStr);
+		}
+	}
+	String(const String& s)//拷贝构造
+		:_pStr(new char[strlen(s._pStr)+1])
+	{
+		strcpy(_pStr,s._pStr);
+	}
+	~String()//析构函数
+	{
+		if(NULL == _pStr)
+		{
+			return;
+		}
+		else
+		{
+			delete[]_pStr;
+			_pStr = NULL;
+		}
+	}
+	String& operator=(const String& s)//赋值运算符重载
+	{
+		if(_pStr != s._pStr)
+		{
+			char* temp  = new char[strlen(s._pStr)+1];
+			strcpy(temp,s._pStr);
+			delete []_pStr;
+			_pStr = temp;
+		}
+		return *this;
+	}
+	void Copy(String& s);
+	String StrStr(const String& s);
+	String& operator+(const String& s);
+	size_t Size();
+	bool Empty();
+	bool operator<(const String& s);
+	bool operator>(const String& s);
+	bool operator==(const String& s);
+	bool operator!=(const String& s);
+
+public:
+	// 不能够直接调用库函数
+	String& my_strcpy(const char* str)
+	{
+		//*this = (new char[strlen(str) + 1]);
+		String temp;
+		temp._pStr = _pStr;;
+		assert(_pStr && str);
+		if(_pStr != str)
+		{
+			while(*str)
+			{
+				*temp._pStr = *str;
+				temp._pStr++;
+				str++;
+			}
+			*temp._pStr = '\0';
+		}
+		return *this;
+	}
+int my_strcmp(const char* str)
+{
+	char *temp = (char*)str;
+	assert(_pStr && str);
+	while(*temp && _pStr && (*temp == *_pStr))
+	{
+		temp++;
+		_pStr++;
+	}
+	return *_pStr - *temp;
+}
+private:
+	char* _pStr;
+};
+
+void String::Copy(String& s)
+{
+	*this = (new char[strlen(s._pStr) + 1]);
+	String s1(*this);
+	assert(s1._pStr && s._pStr);
+	if(s1._pStr != s._pStr)
+	{
+		while(*s._pStr)
+		{
+			*s1._pStr++ = *s._pStr++;
+		}
+		*s1._pStr = *s._pStr;
+	}
+}
+String String::StrStr(const String& s)
+{
+	String temp;
+	String s1(*this);
+	String s2(s);
+	assert(_pStr && s._pStr);
+	if(!*s2._pStr)
+	{
+		return s1;
+	}
+	while(*s1._pStr)
+	{
+		temp._pStr = s1._pStr;
+		while(*s1._pStr && *s2._pStr && (*s1._pStr == *s2._pStr))
+		{
+			s1._pStr++;
+			s2._pStr++;
+		}
+		if(!*s2._pStr)
+		{
+			return temp;
+		}
+		s1._pStr++;
+	}
+	return NULL;
+}
+String& String::operator+(const String& s)//字符串追加
+{
+	String temp = new char[strlen(s._pStr) + strlen(_pStr) + 1];
+	String temp ;
+	temp._pStr = _pStr;
+	assert(_pStr && s._pStr);
+	while(*temp._pStr != '\0')
+	{
+		temp._pStr++;
+	}
+    temp._pStr = s._pStr;
+	//_pStr = temp._pStr;
+	return *this;
+}
+size_t String::Size()
+{
+	assert(_pStr);
+	int count = 0;
+	while(*_pStr)
+	{
+		_pStr++;
+		count++;
+	}
+	return count;
+}
+bool String::Empty()
+{
+	if(!*_pStr)
+		return true;
+	else
+		return false;
+}
+bool String::operator<(const String& s)
+{
+	String s1(s);
+	assert(_pStr && s1._pStr);
+	while(*s1._pStr && _pStr && (*s1._pStr == *_pStr))
+	{
+		s1._pStr++;
+		_pStr++;
+	}
+	if((*_pStr - *s1._pStr)<0)
+		return true;
+	else
+		return false;
+}
+bool String::operator>(const String& s)
+{
+	String s1(s);
+	assert(_pStr && s1._pStr);
+	while(*s1._pStr && _pStr && (*s1._pStr == *_pStr))
+	{
+		s1._pStr++;
+		_pStr++;
+	}
+	if((*_pStr - *s1._pStr)>0)
+		return true;
+	else
+		return false;
+}
+bool String::operator==(const String& s)
+{
+	String s1(s);
+	assert(_pStr && s1._pStr);
+	while(*s1._pStr && _pStr && (*s1._pStr == *_pStr))
+	{
+		s1._pStr++;
+		_pStr++;
+	}
+	if((*_pStr - *s1._pStr)==0)
+		return true;
+	else
+		return false;
+}
+bool String::operator!=(const String& s)
+{
+	String s1(s);
+	assert(_pStr && s1._pStr);
+	while(*s1._pStr && _pStr && (*s1._pStr == *_pStr))
+	{
+		s1._pStr++;
+		_pStr++;
+	}
+	if((*_pStr - *s1._pStr) != 0)
+		return true;
+	else
+		return false;
+}
+int main()
+{
+	String s1("abcd");
+	String s2(s1);
+	String s3 = s2;
+	String s4("cd");
+	s1.operator+(s4);
+	bool ret = s1>s4;
+	int a = s4.my_strcmp("dhhv");
+	s4.my_strcpy("gfuj");
+	s1.StrStr(s4);
+	system("pause");
+	return 0;
+}								
+//
+//
+
+
